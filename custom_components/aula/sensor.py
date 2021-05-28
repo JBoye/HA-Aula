@@ -23,12 +23,12 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         _LOGGER,
         name="sensor",
         update_method=async_update_data,
-        update_interval=timedelta(hours=1),
+        update_interval=timedelta(minutes=5)
     )
 
     # Immediate refresh
     await coordinator.async_request_refresh()
-
+    
     entities = []
     for i, child in enumerate(hass.data[DOMAIN]["client"]._children):                       
         entities.append(AulaSensor(hass, coordinator, child, i))
@@ -53,7 +53,8 @@ class AulaSensor(Entity):
             3 = KOMMET/TIL STEDE
             8 = HENTET/GÅET
         """
-        states = ["Ikke kommet", "1", "2", "Kommet/Til stede", "4", "5", "6", "7", "Gået"]
+
+        states = ["Ikke kommet", "1", "2", "Kommet/Til stede", "4", "5", "6", "7", "Gået", "9", "10", "11", "12", "13", "14", "15"]
         return states[self._client._daily_overview[self._index]["status"]]
 
     @property
