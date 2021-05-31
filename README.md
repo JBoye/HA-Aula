@@ -19,7 +19,8 @@ Selenium er nu droppet og i stedet lavet med inspiration fra Morten Helmstedt - 
 
 
 ### Eksempel på middagslur-sensor (kræver at institutionen registrerer det):
-```template:
+```
+template:
   - sensor:
       - name: "Sovetid"
         state: >    
