@@ -3,85 +3,67 @@ import logging
 import requests
 import time
 import datetime
-from selenium import webdriver
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import WebDriverException
+import requests
+from bs4 import BeautifulSoup
+import json
 from urllib.parse import urljoin
 
 _LOGGER = logging.getLogger(__name__)
 
 class Client:
-    def __init__(self, selenium, username, password):
-        self._selenium = selenium
+    def __init__(self, username, password):
         self._username = username
-        self._password = password        
-        self._cookies = {}
+        self._password = password    
+        self._session = None    
 
     def login(self):
-        chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_argument('whitelisted-ips')
-        chrome_options.add_argument('headless')
-        chrome_options.add_argument('no-sandbox')
+        self._session = requests.Session()
+        response = self._session.get('https://login.aula.dk/auth/login.php?type=unilogin')
+        
+        user_data = { 'username': self._username, 'password': self._password }
+        redirects = 0
+        success = False
+        url = ''
+        while success == False and redirects < 10:
+            html = BeautifulSoup(response.text, 'lxml')
+            url = html.form['action']
+            post_data = {}
+            for input in html.find_all('input'):
+                if(input.has_attr('name') and input.has_attr('value')):
+                    post_data[input['name']] = input['value']
+                    for key in user_data:
+                        if(input.has_attr('name') and input['name'] == key):
+                            post_data[key] = user_data[key]
 
-        try:
-            # Check selenuim connection
-            r = requests.get(urljoin(self._selenium, 'wd/hub/status'))
-            r.raise_for_status()
 
-            with webdriver.Remote(command_executor=urljoin(self._selenium, 'wd/hub'), desired_capabilities=DesiredCapabilities.CHROME, options=chrome_options) as driver:
-                
-                driver.implicitly_wait(5)
-                driver.get("https://aula.dk")
-                
-                driver.find_element_by_css_selector(".uni-login").click()
-                driver.find_element_by_id("username").send_keys(self._username + Keys.RETURN)
-                driver.find_element_by_css_selector("[type=password]").send_keys(self._password)
-                driver.find_element_by_css_selector("[type=submit]").click()
-
-                time.sleep(5) #TODO: Wait for page/cookie instead
-                _LOGGER.debug("Login complete")
-
-                self._cookies = driver.get_cookies()
-                driver.close()
-        except WebDriverException:
-            _LOGGER.error('Webdriver error')
-        except requests.exceptions.HTTPError as errh:
-            _LOGGER.error('Sellenuim http error: %s', errh)
-        except requests.exceptions.ConnectionError as errc:
-            _LOGGER.error('Sellenuim error connecting: %s', errc)
-        except requests.exceptions.Timeout as errt:
-            _LOGGER.error("Sellenuim timeout error: %s", errt)
-        except requests.exceptions.RequestException as err:
-            _LOGGER.error("OOps: error: %s", err)
+            response = self._session.post(url, data = post_data)
+            if response.url == 'https://www.aula.dk:443/portal/':
+                success = True
+            redirects += 1
+        
+        self._profiles = self._session.get("https://www.aula.dk/api/v11/?method=profiles.getProfilesByLogin").json()["data"]["profiles"]
+        self._session.get("https://www.aula.dk/api/v11/?method=profiles.getProfileContext&portalrole=guardian")
+        _LOGGER.debug("LOGIN: " + str(success))
 
     def update_data(self):
-        _LOGGER.debug("UPDATE DATA")
-
-        s = requests.Session()
-        for cookie in self._cookies:
-            s.cookies.set(cookie['name'], cookie['value'])       
+        is_logged_in = False
+        if self._session:
+            response = self._session.get("https://www.aula.dk/api/v11/?method=profiles.getProfilesByLogin").json()
+            is_logged_in = response["status"]["message"] == "OK"
         
-        is_logged_in = requests.get("https://www.aula.dk/api/v11/?method=profiles.getProfilesByLogin", cookies=s.cookies).json()["status"]["message"] == "OK"
         _LOGGER.debug("is_logged_ind? " + str(is_logged_in))
         
-
         if not is_logged_in:
             self.login()
-            for cookie in self._cookies:
-                s.cookies.set(cookie['name'], cookie['value'])
 
-        self._daily_overview = []
-        self._week_plan = []
-        self._profiles = requests.get("https://www.aula.dk/api/v11/?method=profiles.getProfilesByLogin", cookies=s.cookies).json()["data"]["profiles"]
-        
         self._children = []
         for profile in self._profiles:
             for child in profile["children"]:
                 self._children.append(child)
-
-        for i, child in enumerate(self._children):       
-            self._daily_overview.append(requests.get("https://www.aula.dk/api/v11/?method=presence.getDailyOverview&childIds[]=" + str(child["id"]), cookies=s.cookies).json()["data"][0])
+        
+        self._daily_overview = []
+        for i, child in enumerate(self._children):      
+            self._daily_overview.append(self._session.get("https://www.aula.dk/api/v11/?method=presence.getDailyOverview&childIds[]=" + str(child["id"])).json()["data"][0])        
 
         #TODO: Week plan
         #total_weeks = 4
@@ -89,7 +71,5 @@ class Client:
         #from_date = (now - datetime.timedelta(days = (now).weekday())).strftime("%Y-%m-%d")
         #to_date = (now + datetime.timedelta(days = (7 * total_weeks) - (now).weekday())).strftime("%Y-%m-%d")
         #week_plan = requests.get("https://www.aula.dk/api/v11/?method=presence.getPresenceTemplates&filterInstitutionProfileIds[]=" + str(child_id) + "&fromDate=" + from_date + "&toDate=" + to_date, cookies=s.cookies).json()#["data"]["presenceWeekTemplates"][0]
-
-                
 
         return True
