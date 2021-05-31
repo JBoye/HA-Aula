@@ -44,7 +44,12 @@ class AulaSensor(Entity):
 
     @property
     def name(self):
-        return self._client._daily_overview[self._index]["mainGroup"]["name"] + " " + self._child["name"].split()[0]
+        try:
+            group_name = self._client._daily_overview[self._index]["mainGroup"]["name"]
+        except:
+            group_name = "Aula"
+        _LOGGER.debug("Sensor name: " + group_name + " " + self._child["name"].split()[0])
+        return group_name + " " + self._child["name"].split()[0]
 
     @property
     def state(self):
