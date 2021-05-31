@@ -54,7 +54,7 @@ class AulaSensor(Entity):
             8 = HENTET/GÅET
         """
 
-        states = ["Ikke kommet", "1", "2", "Kommet/Til stede", "4", "5", "6", "7", "Gået", "9", "10", "11", "12", "13", "14", "15"]
+        states = ["Ikke kommet", "1", "2", "Kommet/Til stede", "4", "Sover", "6", "7", "Gået", "9", "10", "11", "12", "13", "14", "15"]
         return states[self._client._daily_overview[self._index]["status"]]
 
     @property
