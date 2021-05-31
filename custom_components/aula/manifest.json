@@ -6,6 +6,6 @@
     "codeowners": ["Jonas Boye"],
     "requirements": ["beautifulsoup4", "lxml"],
     "iot_class": "cloud_polling",
-    "version": "1.0.0"
+    "version": "1.2.0"
   }
   
