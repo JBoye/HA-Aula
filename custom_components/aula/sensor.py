@@ -30,22 +30,23 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     await coordinator.async_request_refresh()
     
     entities = []
-    for i, child in enumerate(hass.data[DOMAIN]["client"]._children):                       
-        entities.append(AulaSensor(hass, coordinator, child, i))
+    client = hass.data[DOMAIN]["client"]
+    for i, child in enumerate(client._children):     
+        if str(child["id"]) in client._daily_overview:
+            entities.append(AulaSensor(hass, coordinator, child))
     async_add_entities(entities)
 
 class AulaSensor(Entity):
-    def __init__(self, hass, coordinator, child, index) -> None:
+    def __init__(self, hass, coordinator, child) -> None:
         self._hass = hass
         self._coordinator = coordinator
         self._child = child
         self._client = hass.data[DOMAIN]["client"]
-        self._index = index
 
     @property
     def name(self):
         try:
-            group_name = self._client._daily_overview[self._index]["mainGroup"]["name"]
+            group_name = self._client._daily_overview[str(self._child["id"])]["mainGroup"]["name"]
         except:
             group_name = "Aula"
         _LOGGER.debug("Sensor name: " + group_name + " " + self._child["name"].split()[0])
@@ -55,16 +56,21 @@ class AulaSensor(Entity):
     def state(self):
         """
             0 = IKKE KOMMET
+            2 = FERIE/FRI
             3 = KOMMET/TIL STEDE
+            5 = SOVER
             8 = HENTET/GÅET
         """
 
         states = ["Ikke kommet", "1", "Ferie/Fri", "Kommet/Til stede", "4", "Sover", "6", "7", "Gået", "9", "10", "11", "12", "13", "14", "15"]
-        return states[self._client._daily_overview[self._index]["status"]]
+        daily_info = self._client._daily_overview[str(self._child["id"])]
+
+        return states[daily_info["status"]]
 
     @property
     def device_state_attributes(self):
-        daily_info = self._client._daily_overview[self._index]
+        daily_info = self._client._daily_overview[str(self._child["id"])]
+        
         fields = ['location', 'sleepIntervals', 'checkInTime', 'checkOutTime', 'activityType', 'entryTime', 'exitTime', 'exitWith', 'comment', 'spareTimeActivity', 'selfDeciderStartTime', 'selfDeciderEndTime']
         attributes = {}
         for attribute in fields:

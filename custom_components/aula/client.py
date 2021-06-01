@@ -61,9 +61,11 @@ class Client:
             for child in profile["children"]:
                 self._children.append(child)
         
-        self._daily_overview = []
+        self._daily_overview = {}
         for i, child in enumerate(self._children):      
-            self._daily_overview.append(self._session.get("https://www.aula.dk/api/v11/?method=presence.getDailyOverview&childIds[]=" + str(child["id"])).json()["data"][0])        
+            response = self._session.get("https://www.aula.dk/api/v11/?method=presence.getDailyOverview&childIds[]=" + str(child["id"])).json()
+            if len(response["data"]) > 0:
+                self._daily_overview[str(child["id"])] = response["data"][0]
 
         #TODO: Week plan
         #total_weeks = 4
