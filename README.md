@@ -25,5 +25,5 @@ template:
       - name: "Sovetid"
         state: >    
           {% set sleep_interval = state_attr('sensor.hoppelopperne_ellie', 'sleepIntervals')[0] %}
-          {{strptime(sleep_interval.endTime, "%H:%M:%S") - strptime(sleep_interval.startTime, "%H:%M:%S")}}
+          {{(strptime(now().strftime("%H:%M:%S") if sleep_interval.endTime == '' else sleep_interval.endTime, "%H:%M:%S")) - strptime(sleep_interval.startTime, "%H:%M:%S")}}
 ```
