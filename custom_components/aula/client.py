@@ -7,6 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 from urllib.parse import urljoin
+from .const import API
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,14 +42,14 @@ class Client:
                 success = True
             redirects += 1
         
-        self._profiles = self._session.get("https://www.aula.dk/api/v11/?method=profiles.getProfilesByLogin").json()["data"]["profiles"]
-        self._session.get("https://www.aula.dk/api/v11/?method=profiles.getProfileContext&portalrole=guardian")
+        self._profiles = self._session.get(API + "?method=profiles.getProfilesByLogin").json()["data"]["profiles"]
+        self._session.get(API + "?method=profiles.getProfileContext&portalrole=guardian")
         _LOGGER.debug("LOGIN: " + str(success))
 
     def update_data(self):
         is_logged_in = False
         if self._session:
-            response = self._session.get("https://www.aula.dk/api/v11/?method=profiles.getProfilesByLogin").json()
+            response = self._session.get(API + "?method=profiles.getProfilesByLogin").json()
             is_logged_in = response["status"]["message"] == "OK"
         
         _LOGGER.debug("is_logged_ind? " + str(is_logged_in))
@@ -63,7 +64,7 @@ class Client:
         
         self._daily_overview = {}
         for i, child in enumerate(self._children):      
-            response = self._session.get("https://www.aula.dk/api/v11/?method=presence.getDailyOverview&childIds[]=" + str(child["id"])).json()
+            response = self._session.get(API + "?method=presence.getDailyOverview&childIds[]=" + str(child["id"])).json()
             if len(response["data"]) > 0:
                 self._daily_overview[str(child["id"])] = response["data"][0]
 
