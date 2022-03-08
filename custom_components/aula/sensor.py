@@ -59,11 +59,12 @@ class AulaSensor(Entity):
             1 = SYG
             2 = FERIE/FRI
             3 = KOMMET/TIL STEDE
+            4 = PÅ TUR
             5 = SOVER
             8 = HENTET/GÅET
         """
 
-        states = ["Ikke kommet", "Syg", "Ferie/Fri", "Kommet/Til stede", "4", "Sover", "6", "7", "Gået", "9", "10", "11", "12", "13", "14", "15"]
+        states = ["Ikke kommet", "Syg", "Ferie/Fri", "Kommet/Til stede", "På tur", "Sover", "6", "7", "Gået", "9", "10", "11", "12", "13", "14", "15"]
         daily_info = self._client._daily_overview[str(self._child["id"])]
 
         return states[daily_info["status"]]
