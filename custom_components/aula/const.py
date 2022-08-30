@@ -1,2 +1,2 @@
 DOMAIN = "aula"
-API = "https://www.aula.dk/api/v13"
+API = "https://www.aula.dk/api/v14"
