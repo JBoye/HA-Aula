@@ -28,10 +28,10 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 
     # Immediate refresh
     await coordinator.async_request_refresh()
-    
+
     entities = []
     client = hass.data[DOMAIN]["client"]
-    for i, child in enumerate(client._children):     
+    for i, child in enumerate(client._children):
         if str(child["id"]) in client._daily_overview:
             entities.append(AulaSensor(hass, coordinator, child))
     async_add_entities(entities)
@@ -72,13 +72,19 @@ class AulaSensor(Entity):
     @property
     def extra_state_attributes(self):
         daily_info = self._client._daily_overview[str(self._child["id"])]
-        
+
         fields = ['location', 'sleepIntervals', 'checkInTime', 'checkOutTime', 'activityType', 'entryTime', 'exitTime', 'exitWith', 'comment', 'spareTimeActivity', 'selfDeciderStartTime', 'selfDeciderEndTime']
         attributes = {}
         for attribute in fields:
-            attributes[attribute] = daily_info[attribute]
+            if attribute == "exitTime" and daily_info[attribute] == "23:59:00":
+                attributes[attribute] = None
+            else:
+                try:
+                    attributes[attribute] = datetime.strptime(daily_info[attribute], "%H:%M:%S").strftime("%H:%M")
+                except:
+                    attributes[attribute] = daily_info[attribute]
         return attributes
-        
+
 
     @property
     def should_poll(self):
