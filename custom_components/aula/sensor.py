@@ -73,7 +73,7 @@ class AulaSensor(Entity):
     def extra_state_attributes(self):
         daily_info = self._client._daily_overview[str(self._child["id"])]
         
-        fields = ['location', 'sleepIntervals', 'checkInTime', 'checkOutTime', 'activityType', 'entryTime', 'exitTime', 'exitWith', 'comment', 'spareTimeActivity', 'selfDeciderStartTime', 'selfDeciderEndTime']
+        fields = ['location', 'sleepIntervals', 'checkInTime', 'checkOutTime', 'activityType', 'entryTime', 'exitTime', 'exitWith', 'comment', 'spareTimeActivity', 'selfDeciderStartTime', 'selfDeciderEndTime', 'status']
         attributes = {}
         for attribute in fields:
             attributes[attribute] = daily_info[attribute]
